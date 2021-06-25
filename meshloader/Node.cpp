@@ -4,7 +4,7 @@
 
 #include <score/tools/Debug.hpp>
 
-namespace MyVfx
+namespace meshloader
 {
 /** Here we define a mesh fairly manually and in a fairly suboptimal way
  * (based on this: https://pastebin.com/DXKEmvap)

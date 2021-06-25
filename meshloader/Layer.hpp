@@ -3,9 +3,9 @@
 #include <Effect/EffectFactory.hpp>
 #include <Process/GenericProcessFactory.hpp>
 
-#include <MyVfx/Process.hpp>
+#include <meshloader/Process.hpp>
 
-namespace MyVfx
+namespace meshloader
 {
-using LayerFactory = Process::GenericDefaultLayerFactory<MyVfx::Model>;
+using LayerFactory = Process::GenericDefaultLayerFactory<meshloader::Model>;
 }

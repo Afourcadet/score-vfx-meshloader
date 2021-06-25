@@ -3,13 +3,13 @@
 
 #include <ossia/dataflow/node_process.hpp>
 
-namespace MyVfx
+namespace meshloader
 {
 class Model;
 class ProcessExecutorComponent final
-    : public Execution::ProcessComponent_T<MyVfx::Model, ossia::node_process>
+    : public Execution::ProcessComponent_T<meshloader::Model, ossia::node_process>
 {
-  COMPONENT_METADATA("00000000-0000-0000-0000-000000000000")
+  COMPONENT_METADATA("b30efc83-1bb5-4228-a489-4a89a9d0f17f")
 public:
   ProcessExecutorComponent(
       Model& element,

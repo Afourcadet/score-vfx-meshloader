@@ -1,17 +1,17 @@
 #pragma once
 #include <Process/ProcessMetadata.hpp>
 
-namespace MyVfx
+namespace meshloader
 {
 class Model;
 }
 
 PROCESS_METADATA(
     ,
-    MyVfx::Model,
-    "00000000-0000-0000-0000-000000000000",
-    "MyVfx",                           // Internal name
-    "MyVfx",                           // Pretty name
+    meshloader::Model,
+    "a0271690-f6e3-479c-b96e-beb4792c79c3",
+    "meshloader",                           // Internal name
+    "meshloader",                           // Pretty name
     Process::ProcessCategory::Visual,  // Category
     "GFX",                             // Category
     "My VFX",                          // Description

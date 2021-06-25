@@ -4,14 +4,14 @@
 #include <Process/GenericProcessFactory.hpp>
 #include <Process/Process.hpp>
 
-#include <MyVfx/Metadata.hpp>
+#include <meshloader/Metadata.hpp>
 
-namespace MyVfx
+namespace meshloader
 {
 class Model final : public Process::ProcessModel
 {
   SCORE_SERIALIZE_FRIENDS
-  PROCESS_METADATA_IMPL(MyVfx::Model)
+  PROCESS_METADATA_IMPL(meshloader::Model)
   W_OBJECT(Model)
 
 public:
@@ -33,5 +33,5 @@ private:
   QString prettyName() const noexcept override;
 };
 
-using ProcessFactory = Process::ProcessFactory_T<MyVfx::Model>;
+using ProcessFactory = Process::ProcessFactory_T<meshloader::Model>;
 }
