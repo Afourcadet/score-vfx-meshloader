@@ -24,6 +24,8 @@ add_library(score_addon_meshloader
   meshloader/Process.cpp
   meshloader/Node.hpp
   meshloader/Node.cpp
+  meshloader/Loadmesh.h
+  meshloader/Loadmesh.cpp
 
   score_addon_meshloader.hpp
   score_addon_meshloader.cpp

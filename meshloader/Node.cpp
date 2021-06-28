@@ -4,93 +4,45 @@
 
 #include <score/tools/Debug.hpp>
 
+struct data getmesh()
+{
+    std::string inputfile = "ponte.obj";
+    tinyobj::ObjReaderConfig reader_config;
+    reader_config.mtl_search_path = "./"; // Path to material files
+
+    tinyobj::ObjReader reader;
+
+    if (!reader.ParseFromFile(inputfile, reader_config)) {
+      if (!reader.Error().empty()) {
+          std::cerr << "TinyObjReader: " << reader.Error();
+      }
+      exit(1);
+    }
+
+    if (!reader.Warning().empty()) {
+      std::cout << "TinyObjReader: " << reader.Warning();
+    }
+
+    struct data d = attrib_to_data(reader, inputfile, reader_config);
+
+    //std::cout << "data vertices length : " << d.vertices_length << "\n" ;
+
+    return d;
+}
+
 namespace meshloader
 {
 /** Here we define a mesh fairly manually and in a fairly suboptimal way
  * (based on this: https://pastebin.com/DXKEmvap)
  */
-struct TexturedCube final : score::gfx::Mesh
+struct TexturedMesh final : score::gfx::Mesh
 {
-  static std::vector<float> generateCubeMesh() noexcept
-  {
-    struct vec3
-    {
-      float x, y, z;
-    };
-    struct vec2
-    {
-      float x, y;
-    };
-
-    static constexpr const unsigned int indices[6 * 6] = {
-        0, 1, 3, 3, 1, 2, //
-        1, 5, 2, 2, 5, 6, //
-        5, 4, 6, 6, 4, 7, //
-        4, 0, 7, 7, 0, 3, //
-        3, 2, 7, 7, 2, 6, //
-        4, 5, 0, 0, 5, 1  //
-    };
-
-    static constexpr const vec3 vertices[8]
-        = {{-1., -1., -1.}, //
-           {1., -1., -1.},  //
-           {1., 1., -1.},   //
-           {-1., 1., -1.},  //
-           {-1., -1., 1.},  //
-           {1., -1., 1.},   //
-           {1., 1., 1.},    //
-           {-1., 1., 1.}};
-
-    static constexpr const vec2 texCoords[4]
-        = {{0, 0}, //
-           {1, 0}, //
-           {1, 1}, //
-           {0, 1}};
-
-    static constexpr const vec3 normals[6]
-        = {{0, 0, 1},  //
-           {1, 0, 0},  //
-           {0, 0, -1}, //
-           {-1, 0, 0}, //
-           {0, 1, 0},  //
-           {0, -1, 0}};
-
-    static constexpr const int texInds[6] = {0, 1, 3, 3, 1, 2};
-
-    std::vector<float> meshBuf;
-    meshBuf.reserve(36 * 3 + 36 * 2 + 36 * 3);
-
-    // The beginning of the buffer is:
-    // [ {x y z} {x y z} {x y z} ... ]
-    for (int i = 0; i < 36; i++)
-    {
-      meshBuf.push_back(vertices[indices[i]].x);
-      meshBuf.push_back(vertices[indices[i]].y);
-      meshBuf.push_back(vertices[indices[i]].z);
-    }
-
-    // Then we store the texcoords at the end: [ {u v} {u v} {u v} ... ]
-    for (int i = 0; i < 36; i++)
-    {
-      meshBuf.push_back(texCoords[texInds[i % 6]].x);
-      meshBuf.push_back(texCoords[texInds[i % 6]].y);
-    }
-
-    // Then the normals (unused in this example)
-    for (int i = 0; i < 36; i++)
-    {
-      meshBuf.push_back(normals[indices[i / 6]].x);
-      meshBuf.push_back(normals[indices[i / 6]].y);
-      meshBuf.push_back(normals[indices[i / 6]].z);
-    }
-
-    return meshBuf;
-  }
 
   // Generate our mesh data
-  const std::vector<float> mesh = generateCubeMesh();
+  struct data myData = getmesh();
+  const std::vector<float> mesh = myData.values;
 
-  explicit TexturedCube()
+  explicit TexturedMesh()
   {
     // Our mesh's attribute data is not interleaved, thus
     // we have multiple bindings stored in the same buffer:
@@ -116,7 +68,9 @@ struct TexturedCube final : score::gfx::Mesh
     // These variables are used by score to upload the texture
     // and send the draw call automatically
     vertexArray = mesh;
-    vertexCount = 36;
+    vertexCount = myData.vertices_length / 3;
+
+    std::cout << "data vertices length : " << vertexCount << "\n" ;
 
     // Note: if we had an interleaved mesh, where the data is stored like
     // [ { x y z u v } { x y z u v } { x y z u v } ] ...
@@ -139,10 +93,10 @@ struct TexturedCube final : score::gfx::Mesh
   }
 
   // Utility singleton
-  static const TexturedCube& instance() noexcept
+  static const TexturedMesh& instance() noexcept
   {
-    static const TexturedCube cube;
-    return cube;
+    static const TexturedMesh newmesh;
+    return newmesh;
   }
 
   // Ignore this function
@@ -158,14 +112,14 @@ struct TexturedCube final : score::gfx::Mesh
   {
     const QRhiCommandBuffer::VertexInput bindings[] = {
         {&vtxData, 0},                      // vertex starts at offset zero
-        {&vtxData, 36 * 3 * sizeof(float)}, // texcoord starts after all the vertices
+        {&vtxData, myData.vertices_length * sizeof (float)}, // texcoord starts after all the vertices
     };
 
     cb.setVertexInput(0, 2, bindings);
   }
 };
 
-// Here we define basic shaders to display a textured cube with a camera
+// Here we define basic shaders to display a textured mesh with a camera
 static const constexpr auto vertex_shader = R"_(#version 450
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texcoord;
@@ -213,7 +167,7 @@ void main ()
 {
   fragColor = texture(y_tex, v_texcoord.xy);
   if(fragColor.a == 0.)
-    fragColor = vec4(v_texcoord.xy, 0., 1.);
+    fragColor = vec4(1.,1.,1., 1.);
 }
 )_";
 
@@ -221,6 +175,8 @@ Node::Node()
 {
   // This texture is provided by score
   m_image = QImage(":/ossia-score.png");
+
+  std::cout << "new_debug";
 
   // Load ubo address in m_materialData
   m_materialData.reset((char*)&ubo);
@@ -284,12 +240,16 @@ private:
 
     ps->setSampleCount(1);
 
-    ps->setDepthTest(false);
-    ps->setDepthWrite(false);
+    ps->setDepthTest(true);
+    ps->setDepthWrite(true);
+    ps->setDepthOp(QRhiGraphicsPipeline::Always);
+
+
+
 
     // Matches the vertex data
     ps->setTopology(QRhiGraphicsPipeline::Triangles);
-    ps->setCullMode(QRhiGraphicsPipeline::CullMode::Front);
+    ps->setCullMode(QRhiGraphicsPipeline::CullMode::Back);
     ps->setFrontFace(QRhiGraphicsPipeline::FrontFace::CCW);
 
     // Set the shaders used
@@ -319,7 +279,7 @@ private:
 
   void init(score::gfx::RenderList& renderer) override
   {
-    const auto& mesh = TexturedCube::instance();
+    const auto& mesh = TexturedMesh::instance();
 
     // Load the mesh data into the GPU
     {
@@ -392,6 +352,7 @@ private:
   void update(score::gfx::RenderList& renderer, QRhiResourceUpdateBatch& res)
       override
   {
+
     auto& n = static_cast<const Node&>(this->node);
     {
       // Set up a basic camera
@@ -402,7 +363,7 @@ private:
 
       // Our object rotates in a very crude way
       QMatrix4x4 model;
-      model.scale(0.25);
+      model.scale(0.025);
       model.rotate(m_rotationCount++, QVector3D(1, 1, 1));
 
       // The camera and viewports are fixed
@@ -445,7 +406,7 @@ private:
       QRhiCommandBuffer& cb,
       score::gfx::Edge& edge) override
   {
-    const auto& mesh = TexturedCube::instance();
+    const auto& mesh = TexturedMesh::instance();
     defaultRenderPass(renderer, mesh, cb, edge);
     return nullptr;
   }
